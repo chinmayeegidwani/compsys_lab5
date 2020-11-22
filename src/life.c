@@ -54,6 +54,7 @@ game_of_life (char* outboard,
 			// nw calculated later
 			e = BOARD(inboard, i, 0);
 			s = BOARD(inboard, isouth, mod(-1, ncols));
+			se = BOARD(inboard, isouth, 0);
 			//sw = calculated later
 			curr = BOARD(inboard, i, mod(-1, ncols));
 
@@ -61,11 +62,11 @@ game_of_life (char* outboard,
             {
                 //const int jwest = mod (j-1, ncols);
                 const int jeast = mod (j+1, ncols);
-
-                n = ne;
 				nw = n;
-				s = se;
+                n = ne;
 				sw = s;
+				s = se;
+
 				w = curr;
 				curr = e;
 
@@ -74,7 +75,7 @@ game_of_life (char* outboard,
 				se = BOARD(inboard, isouth, jeast);
 
 				// add em up
-				const char neighbor_count = nw + n + ne + e + se + s + sw + w + curr;
+				const char neighbor_count = nw + n + ne + e + se + s + sw + w;
 				// determine if the current cell will be alive in next gen by checking its neighbors
                 BOARD(outboard, i, j) = alivep (neighbor_count, curr);
 
