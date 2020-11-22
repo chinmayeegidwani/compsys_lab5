@@ -16,7 +16,7 @@
   b2 = temp; \
 } while(0)
 
-#define BOARD( __board, __i, __j )  (__board[(__i) + LDA*(__j)])
+#define BOARD( __board, __j, __i )  (__board[(__i) + LDA*(__j)])
 
 
     char*
