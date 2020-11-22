@@ -1,4 +1,4 @@
-teamName: xxx
-student1_fullName: xxx
-student1_studentNumber: 123456789
-student1_email: xxx@mail.utoronto.ca
+teamName: N-Synch
+student1_fullName: Chinmayee Gidwani
+student1_studentNumber: 1003062473
+student1_email: chinmayee.gidwani@mail.utoronto.ca
