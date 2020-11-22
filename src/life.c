@@ -21,7 +21,8 @@
 
 // accesses the element at (i, j) at input board
 #define BOARD( __board, __j, __i)  (__board[(__i) + LDA*(__j)])
-#define NUM_THREADS 4
+#define NUM_THREADS 8
+void* process_thread(void* _args);
 
 typedef struct thread_info{
 	//int gens_max;
@@ -63,21 +64,48 @@ game_of_life (char* outboard,
            geometric decomposition of the output */
         
 		//test with 4 first, make loop later for more threads
-		for(i = 0; i<NUM_THREADS; i++){
-			pthread_create(&thread[i], NULL, process_thread, &thread_args[i]);
-		}
+		pthread_create(&thread[0], NULL, process_thread, &thread_args[0]);
+		pthread_create(&thread[1], NULL, process_thread, &thread_args[1]);
+		pthread_create(&thread[2], NULL, process_thread, &thread_args[2]);
+		pthread_create(&thread[3], NULL, process_thread, &thread_args[3]);
+		pthread_create(&thread[4], NULL, process_thread, &thread_args[4]);
+		pthread_create(&thread[5], NULL, process_thread, &thread_args[5]);
+		pthread_create(&thread[6], NULL, process_thread, &thread_args[6]);
+		pthread_create(&thread[7], NULL, process_thread, &thread_args[7]);
 
 		pthread_join(thread[0], NULL);
 		pthread_join(thread[1], NULL);
 		pthread_join(thread[2], NULL);
 		pthread_join(thread[3], NULL);
+		pthread_join(thread[4], NULL);
+		pthread_join(thread[5], NULL);
+		pthread_join(thread[6], NULL);
+		pthread_join(thread[7], NULL);
+
 
 		// the output of this gen becomes the input of the next gen
         SWAP_BOARDS( outboard, inboard );
-        }
 
 
-    
+		thread_args[0].inboard = inboard;
+		thread_args[0].outboard = outboard;
+		thread_args[1].inboard = inboard;
+		thread_args[1].outboard = outboard;
+		thread_args[2].inboard = inboard;
+		thread_args[2].outboard = outboard;
+		thread_args[3].inboard = inboard;
+		thread_args[3].outboard = outboard;
+		thread_args[4].inboard = inboard;
+		thread_args[4].outboard = outboard;
+		thread_args[5].inboard = inboard;
+		thread_args[5].outboard = outboard;
+		thread_args[6].inboard = inboard;
+		thread_args[6].outboard = outboard;
+		thread_args[7].inboard = inboard;
+		thread_args[7].outboard = outboard;
+
+
+    }
 
     /* 
      * We return the output board, so that we know which one contains
