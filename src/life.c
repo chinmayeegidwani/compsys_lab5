@@ -31,7 +31,9 @@ typedef struct thread_info{
 	char* inboard;
 	char* outboard;
 	int section_num;
-	pthread_barrier_t* barrier;
+	pthread_barrier_t* barrier_per_gen;
+	int gens_max;
+	//int LDA;
 } thread_info;
 /*****************************************************************************
  * Game of life implementation
@@ -51,29 +53,30 @@ game_of_life (char* outboard,
 
 	pthread_t* threads = malloc(sizeof(pthread_t) * NUM_THREADS);
 	thread_info* thread_args = malloc(sizeof(thread_info) * NUM_THREADS);
-	//pthread_barrier_t* barrier_per_gen = malloc(sizeof(pthread_barrier_t));
-	//pthread_barrier_init(barrier_per_gen, 0, NUM_THREADS);
+	pthread_barrier_t* barrier_per_gen = malloc(sizeof(pthread_barrier_t));
+	pthread_barrier_init(barrier_per_gen, 0, NUM_THREADS);
 	for(int i=0; i<NUM_THREADS; i++){
 		thread_args[i].ncols = ncols;
 		thread_args[i].nrows = nrows;
 		thread_args[i].inboard = inboard;
 		thread_args[i].outboard = outboard;
 		thread_args[i].section_num = i;
-		//thread_args[i].barrier = barrier_per_gen;
+		thread_args[i].barrier_per_gen = barrier_per_gen;
+		thread_args[i].gens_max = gens_max;
 	}
 
-	for(curgen=0; curgen < gens_max; curgen++){
-		for(i=0; i<NUM_THREADS; i++){
-			thread_args[i].inboard = inboard;
-			thread_args[i].outboard = outboard;
-			pthread_create(&threads[i], NULL, process_thread, (void*) &thread_args[i]);
-		}
 
-		for(i=0; i<NUM_THREADS; i++){
-			pthread_join(threads[i], NULL);
-		}
-		SWAP_BOARDS(outboard, inboard);
+	for(i=0; i<NUM_THREADS; i++){
+		thread_args[i].inboard = inboard;
+		thread_args[i].outboard = outboard;
+		pthread_create(&threads[i], NULL, process_thread, (void*) &thread_args[i]);
 	}
+
+	for(i=0; i<NUM_THREADS; i++){
+		pthread_join(threads[i], NULL);
+	}
+
+
 	free(threads);
 	free(thread_args);
 	//free(barrier_per_gen);
@@ -107,16 +110,22 @@ void* process_thread(void* _args){
 	char* inboard = args->inboard;
 	char* outboard = args->outboard; 
 	int section_num = args->section_num;
+	int gens_max = args-> gens_max;
+	pthread_barrier_t* barrier = args->barrier_per_gen;
 	int i, j;
 	char n, s, w, e, nw, ne, sw, se, curr;
 	const int LDA = nrows;
+	int curgen;
+
 
 	// cut the entire board into sections
 	int section_h = nrows/NUM_THREADS;
 	int section_beg = section_h * section_num;
 	int section_end = section_h * (section_num + 1); // end of one section is beginning of next;
 
-	for (i = 0; i < nrows; i++)
+
+	for(curgen=0; curgen < gens_max; curgen++){
+		for (i = 0; i < nrows; i++)
 			{
 				// LICM
 				const int inorth = mod (i-1, nrows); // calculating neighbor positions
@@ -155,4 +164,8 @@ void* process_thread(void* _args){
 
 				}
 			}
+			// do at the end of a generation
+		SWAP_BOARDS(outboard, inboard);
+		pthread_barrier_wait(barrier);
+	}
 }
