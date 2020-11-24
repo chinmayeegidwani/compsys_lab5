@@ -31,6 +31,7 @@ typedef struct thread_info{
 	char* inboard;
 	char* outboard;
 	int section_num;
+	pthread_barrier_t* barrier;
 } thread_info;
 /*****************************************************************************
  * Game of life implementation
@@ -46,66 +47,37 @@ game_of_life (char* outboard,
        nrows! */
 
     int curgen, i, j;
+	const int rows_per_thread = nrows/NUM_THREADS;
 
-	pthread_t thread[NUM_THREADS];
-	struct thread_info thread_args[NUM_THREADS];
+	pthread_t* threads = malloc(sizeof(pthread_t) * NUM_THREADS);
+	thread_info* thread_args = malloc(sizeof(thread_info) * NUM_THREADS);
+	//pthread_barrier_t* barrier_per_gen = malloc(sizeof(pthread_barrier_t));
+	//pthread_barrier_init(barrier_per_gen, 0, NUM_THREADS);
 	for(int i=0; i<NUM_THREADS; i++){
 		thread_args[i].ncols = ncols;
 		thread_args[i].nrows = nrows;
 		thread_args[i].inboard = inboard;
 		thread_args[i].outboard = outboard;
 		thread_args[i].section_num = i;
+		//thread_args[i].barrier = barrier_per_gen;
 	}
 
+	for(curgen=0; curgen < gens_max; curgen++){
+		for(i=0; i<NUM_THREADS; i++){
+			thread_args[i].inboard = inboard;
+			thread_args[i].outboard = outboard;
+			pthread_create(&threads[i], NULL, process_thread, (void*) &thread_args[i]);
+		}
 
-    for (curgen = 0; curgen < gens_max; curgen++)
-    {
-        /* HINT: you'll be parallelizing these loop(s) by doing a
-           geometric decomposition of the output */
-        
-		//test with 4 first, make loop later for more threads
-		pthread_create(&thread[0], NULL, process_thread, &thread_args[0]);
-		pthread_create(&thread[1], NULL, process_thread, &thread_args[1]);
-		pthread_create(&thread[2], NULL, process_thread, &thread_args[2]);
-		pthread_create(&thread[3], NULL, process_thread, &thread_args[3]);
-		pthread_create(&thread[4], NULL, process_thread, &thread_args[4]);
-		pthread_create(&thread[5], NULL, process_thread, &thread_args[5]);
-		pthread_create(&thread[6], NULL, process_thread, &thread_args[6]);
-		pthread_create(&thread[7], NULL, process_thread, &thread_args[7]);
+		for(i=0; i<NUM_THREADS; i++){
+			pthread_join(threads[i], NULL);
+		}
+		SWAP_BOARDS(outboard, inboard);
+	}
+	free(threads);
+	free(thread_args);
+	//free(barrier_per_gen);
 
-		pthread_join(thread[0], NULL);
-		pthread_join(thread[1], NULL);
-		pthread_join(thread[2], NULL);
-		pthread_join(thread[3], NULL);
-		pthread_join(thread[4], NULL);
-		pthread_join(thread[5], NULL);
-		pthread_join(thread[6], NULL);
-		pthread_join(thread[7], NULL);
-
-
-		// the output of this gen becomes the input of the next gen
-        SWAP_BOARDS( outboard, inboard );
-
-
-		thread_args[0].inboard = inboard;
-		thread_args[0].outboard = outboard;
-		thread_args[1].inboard = inboard;
-		thread_args[1].outboard = outboard;
-		thread_args[2].inboard = inboard;
-		thread_args[2].outboard = outboard;
-		thread_args[3].inboard = inboard;
-		thread_args[3].outboard = outboard;
-		thread_args[4].inboard = inboard;
-		thread_args[4].outboard = outboard;
-		thread_args[5].inboard = inboard;
-		thread_args[5].outboard = outboard;
-		thread_args[6].inboard = inboard;
-		thread_args[6].outboard = outboard;
-		thread_args[7].inboard = inboard;
-		thread_args[7].outboard = outboard;
-
-
-    }
 
     /* 
      * We return the output board, so that we know which one contains
