@@ -52,12 +52,79 @@ game_of_life (char* outboard,
 
     int curgen, i, j;
 	const int rows_per_thread = nrows/NUM_THREADS;
+	char n, s, w, e, nw, ne, sw, se, curr;
+	const int LDA = nrows;
+	int jwest, jeast;
+	const int nrows_1 = nrows - 1;
+  	const int nrows_2 = nrows - 2;
+	for(curgen=0; curgen < gens_max; curgen++){
+		for (j = 0; j < ncols; j++){
+				// LICM
+				 jwest = (j == 0) ? (ncols-1) : (j-1);
+				 jeast = (j == ncols-1) ? (0) : (j+1);
 
+
+				// try to reuse previous cell's computed values
+
+
+				
+				n = BOARD(inboard, nrows-2, j); //
+				ne = BOARD(inboard, nrows-2, jeast);//
+				nw = BOARD(inboard, nrows-2, jwest); //
+				e = BOARD(inboard, nrows-1, jeast);//
+				w = BOARD(inboard, nrows-1, jwest);//
+				s = BOARD(inboard, 0, j); //
+				se = BOARD(inboard, 0, jeast);//
+				sw = BOARD(inboard, 0, jwest);//
+				curr = BOARD(inboard, nrows-1, j); //
+
+				BOARD(outboard, nrows-1, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
+
+
+
+				for (i = 0; i < nrows; i++)	{
+				//const int inorth = mod (i-1, nrows); // calculating neighbor positions
+				//const int isouth = mod (i+1, nrows);
+
+				
+					nw = w;
+					ne = e;
+					n = curr; //DON'T CHANGE THIS ORDER MF
+					curr = s;
+					e = se;
+					w = sw;
+
+					// calculate three new vals
+					s = BOARD(inboard, i+1, j);
+					sw = BOARD(inboard, i+1, jwest);
+					se = BOARD(inboard, i+1, jeast);
+
+					BOARD(outboard, i, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
+				
+				}
+			}
+			// do at the end of a generation
+		SWAP_BOARDS(outboard, inboard);
+	}
+
+    return inboard;
+
+
+
+
+
+
+
+
+
+
+
+/*
 	pthread_t* threads = malloc(sizeof(pthread_t) * NUM_THREADS);
 	thread_info* thread_args = malloc(sizeof(thread_info) * NUM_THREADS);
 	pthread_barrier_t* barrier_per_gen = malloc(sizeof(pthread_barrier_t));
 	pthread_barrier_init(barrier_per_gen, 0, NUM_THREADS);
-	int row = 0;
+	int row = 0; 
 	for(int i=0; i<NUM_THREADS; i++){
 		thread_args[i].ncols = ncols;
 		thread_args[i].nrows = nrows;
@@ -69,7 +136,7 @@ game_of_life (char* outboard,
 		thread_args[i].start = row;
 		row = rows_per_thread * (i+1);
 		thread_args[i].end = row;
-	}
+	} 
 
 
 	for(i=0; i<NUM_THREADS; i++){
@@ -86,7 +153,7 @@ game_of_life (char* outboard,
 	free(threads);
 	free(thread_args);
 	free(barrier_per_gen);
-
+*/
 
     /* 
      * We return the output board, so that we know which one contains
@@ -94,7 +161,7 @@ game_of_life (char* outboard,
      * Just be careful when you free() the two boards, so that you don't
      * free the same one twice!!! 
      */
-    return inboard;
+
 }
 
 /*
@@ -108,73 +175,3 @@ typedef struct thread_info{
 } thread_info;
 */
 
-
-void* process_thread(void* _args){
-	thread_info* args = (thread_info*) _args;
-	int nrows = args->nrows;
-	int ncols = args->ncols;
-	char* inboard = args->inboard;
-	char* outboard = args->outboard; 
-	//int section_num = args->section_num;
-	int gens_max = args-> gens_max;
-	pthread_barrier_t* barrier = args->barrier_per_gen;
-	int start = args->start;
-	int end = args->end;
-	int i, j;
-	char n, s, w, e, nw, ne, sw, se, curr;
-	const int LDA = nrows;
-	int curgen;
-
-
-	// cut the entire board into sections
-	//int section_h = nrows/NUM_THREADS;
-	//int section_beg = section_h * section_num;
-	//int section_end = section_h * (section_num + 1); // end of one section is beginning of next;
-
-
-	for(curgen=0; curgen < gens_max; curgen++){
-		for (j = start; j < end; j++){
-				// LICM
-				const int jwest = mod (j-1, ncols);
-				const int jeast = mod (j+1, ncols);
-
-
-
-				// try to reuse previous cell's computed values
-				n = BOARD(inboard, nrows-2, j);
-				ne = BOARD(inboard, nrows-2, jeast);
-				nw = BOARD(inboard, nrows-2, jwest);
-				e = BOARD(inboard, nrows-1, jeast);
-				w = BOARD(inboard, nrows-1, jeast);
-				s = BOARD(inboard, 0, j);
-				se = BOARD(inboard, 0, jeast);
-				sw = BOARD(inboard, 0, jwest);
-				curr = BOARD(inboard, nrows-1, j);
-
-				BOARD(outboard, nrows-1, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
-
-
-
-				for (i = 0; i < nrows; i++)	{
-				//const int inorth = mod (i-1, nrows); // calculating neighbor positions
-				//const int isouth = mod (i+1, nrows);
-					nw = w;
-					ne = e;
-					n = curr; //DON'T CHANGE THIS ORDER MF
-					curr = s;
-					e = se;
-					w = sw;
-
-					// calculate three new vals
-					s = BOARD(inboard, i+1, j);
-					sw = BOARD(inboard, i+1, jwest);
-					se = BOARD(inboard, i+1, jeast);
-
-					BOARD(outboard, i, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
-				}
-			}
-			// do at the end of a generation
-		SWAP_BOARDS(outboard, inboard);
-		pthread_barrier_wait(barrier);
-	}
-}
