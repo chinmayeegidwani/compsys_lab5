@@ -97,7 +97,7 @@ game_of_life (char* outboard,
 
 
 
-				for (i = 1; i < nrows-8; i+=8)	{
+				for (i = 1; i < nrows-16; i+=16)	{
 				//const int inorth = mod (i-1, nrows); // calculating neighbor positions
 				//const int isouth = mod (i+1, nrows);
 					UNROLL(i);
@@ -108,6 +108,15 @@ game_of_life (char* outboard,
 					UNROLL(i+5);
 					UNROLL(i+6);
 					UNROLL(i+7);
+
+					UNROLL(i+8);
+					UNROLL(i+9);
+					UNROLL(i+10);
+					UNROLL(i+11);
+					UNROLL(i+12);
+					UNROLL(i+13);
+					UNROLL(i+14);
+					UNROLL(i+15);
 				}
 					UNROLL(i);
 					UNROLL(i+1);
@@ -116,6 +125,15 @@ game_of_life (char* outboard,
 					UNROLL(i+4);
 					UNROLL(i+5);
 					UNROLL(i+6);
+
+					UNROLL(i+7);
+					UNROLL(i+8);
+					UNROLL(i+9);
+					UNROLL(i+10);
+					UNROLL(i+11);
+					UNROLL(i+12);
+					UNROLL(i+13);
+					UNROLL(i+14);
 			}
 			// do at the end of a generation
 		SWAP_BOARDS(outboard, inboard);
