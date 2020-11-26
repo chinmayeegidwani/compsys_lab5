@@ -37,6 +37,21 @@ typedef struct thread_info{
 	int start;
 	int end;
 } thread_info;
+
+#define UNROLL(i) \
+	nw = w; \
+	ne = e;  \
+	n = curr; \
+	curr = s; \
+	e = se; \
+	w = sw; \
+	s = BOARD(inboard, i, j); \
+	sw = BOARD(inboard, i, jwest); \
+	se = BOARD(inboard, i, jeast); \
+	BOARD(outboard, i-1, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
+
+
+
 /*****************************************************************************
  * Game of life implementation
  ****************************************************************************/
@@ -82,26 +97,25 @@ game_of_life (char* outboard,
 
 
 
-				for (i = 1; i < nrows; i++)	{
+				for (i = 1; i < nrows-8; i+=8)	{
 				//const int inorth = mod (i-1, nrows); // calculating neighbor positions
 				//const int isouth = mod (i+1, nrows);
-
-				
-					nw = w;
-					ne = e;
-					n = curr; //DON'T CHANGE THIS ORDER MF
-					curr = s;
-					e = se;
-					w = sw;
-
-					// calculate three new vals
-					s = BOARD(inboard, i, j);
-					sw = BOARD(inboard, i, jwest);
-					se = BOARD(inboard, i, jeast);
-
-					BOARD(outboard, i-1, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
-				
+					UNROLL(i);
+					UNROLL(i+1);
+					UNROLL(i+2);
+					UNROLL(i+3);
+					UNROLL(i+4);
+					UNROLL(i+5);
+					UNROLL(i+6);
+					UNROLL(i+7);
 				}
+					UNROLL(i);
+					UNROLL(i+1);
+					UNROLL(i+2);
+					UNROLL(i+3);
+					UNROLL(i+4);
+					UNROLL(i+5);
+					UNROLL(i+6);
 			}
 			// do at the end of a generation
 		SWAP_BOARDS(outboard, inboard);
