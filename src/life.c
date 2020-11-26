@@ -60,8 +60,8 @@ game_of_life (char* outboard,
 	for(curgen=0; curgen < gens_max; curgen++){
 		for (j = 0; j < ncols; j++){
 				// LICM
-				 jwest = (j == 0) ? (ncols-1) : (j-1);
-				 jeast = (j == ncols-1) ? (0) : (j+1);
+				 jwest = (j == 0)? (ncols-1):(j-1);
+				 jeast = (j == ncols-1) ? (0):(j+1);
 
 
 				// try to reuse previous cell's computed values
@@ -82,7 +82,7 @@ game_of_life (char* outboard,
 
 
 
-				for (i = 0; i < nrows; i++)	{
+				for (i = 1; i < nrows; i++)	{
 				//const int inorth = mod (i-1, nrows); // calculating neighbor positions
 				//const int isouth = mod (i+1, nrows);
 
@@ -95,11 +95,11 @@ game_of_life (char* outboard,
 					w = sw;
 
 					// calculate three new vals
-					s = BOARD(inboard, i+1, j);
-					sw = BOARD(inboard, i+1, jwest);
-					se = BOARD(inboard, i+1, jeast);
+					s = BOARD(inboard, i, j);
+					sw = BOARD(inboard, i, jwest);
+					se = BOARD(inboard, i, jeast);
 
-					BOARD(outboard, i, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
+					BOARD(outboard, i-1, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
 				
 				}
 			}
