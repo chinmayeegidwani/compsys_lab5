@@ -1,0 +1,31 @@
+Report:
+
+Optimizations:
+1) Reusing old values: When computing the neighbor count of adjacent cells,
+the previously computed values can be used. Whether traversing in row major or
+column major order, 6 out of 9 values can be reused, reducing computation and 
+only requiring 3 additional computations per cell.
+
+2) Column major order: Traversing in column major order makes better use of
+cache locality.
+
+3) Eliminate use of mod function: Use ternary statements to catch toroidal boundary
+conditions instead.
+
+4) Function inlining: inline alivep calls
+
+5) Loop unrolling: unroll the inner loop to save on loop overhead. I tested and found
+that 16 unrolls is optimal. Anything more reduces performance.
+
+6) Parallelization: use 8 threads to split up the work. Use a barrier for the end of
+each generation so that they are synchronized before moving onto the next gen, ensuring
+correctness. The board is split by chunks of columns that each thread performs on.
+
+What I tried and didn't work:
+1) Parallelizing too early: I reused the old values in row major order, then parallelized.
+I actually saw a decrease in performance when I parallelized.
+
+2) Tried playing with number of threads and loop unrolls. The numbers I landed on were the
+ones that maximized performance on the testing machine.
+
+3) Took lot of debugging to get the column major traversal, especially the indices, correct.
