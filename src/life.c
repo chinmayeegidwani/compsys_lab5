@@ -48,7 +48,9 @@ typedef struct thread_info{
 	s = BOARD(inboard, i, j); \
 	sw = BOARD(inboard, i, jwest); \
 	se = BOARD(inboard, i, jeast); \
-	BOARD(outboard, i-1, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
+	count = n+ne+nw+e+w+s+se+sw; \
+	BOARD(outboard, i-1, j) = (! curr && (count == (char) 3)) ||(curr && (count >= 2) && (count <= 3));
+
 
 
 
@@ -67,7 +69,7 @@ game_of_life (char* outboard,
 
     int curgen, i, j;
 	const int rows_per_thread = nrows/NUM_THREADS;
-	char n, s, w, e, nw, ne, sw, se, curr;
+	char n, s, w, e, nw, ne, sw, se, curr, count;
 	const int LDA = nrows;
 	int jwest, jeast;
 	const int nrows_1 = nrows - 1;
@@ -82,7 +84,7 @@ game_of_life (char* outboard,
 				// try to reuse previous cell's computed values
 
 
-				
+
 				n = BOARD(inboard, nrows-2, j); //
 				ne = BOARD(inboard, nrows-2, jeast);//
 				nw = BOARD(inboard, nrows-2, jwest); //
@@ -93,7 +95,10 @@ game_of_life (char* outboard,
 				sw = BOARD(inboard, 0, jwest);//
 				curr = BOARD(inboard, nrows-1, j); //
 
-				BOARD(outboard, nrows-1, j) = alivep(n+ne+nw+e+w+s+se+sw, curr);
+				count = n+ne+nw+e+w+s+se+sw;
+
+				BOARD(outboard, nrows-1, j) = (! curr && (count == (char) 3)) || // rule 2
+    									(curr && (count >= 2) && (count <= 3));
 
 
 
