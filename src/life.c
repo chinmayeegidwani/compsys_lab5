@@ -21,7 +21,7 @@
 
 // accesses the element at (i, j) at input board
 #define BOARD( __board, __i, __j)  (__board[(__i) + LDA*(__j)])
-#define NUM_THREADS 12
+#define NUM_THREADS 8
 void* process_thread(void* _args);
 
 typedef struct thread_info{
