@@ -5,6 +5,7 @@
 #include "life.h"
 #include "util.h"
 #include <pthread.h>
+#include <stdlib.h>
 
 /*****************************************************************************
  * Helper function definitions
@@ -21,7 +22,7 @@
 
 // accesses the element at (i, j) at input board
 #define BOARD( __board, __i, __j)  (__board[(__i) + LDA*(__j)])
-#define NUM_THREADS 8
+#define NUM_THREADS 16
 void* process_thread(void* _args);
 
 typedef struct thread_info{
@@ -175,43 +176,11 @@ void* process_thread(void* arg){
 
 
 
-				for (i = 1; i < nrows-16; i+=16)	{
+				for (i = 1; i < nrows; i++)	{
 				//const int inorth = mod (i-1, nrows); // calculating neighbor positions
 				//const int isouth = mod (i+1, nrows);
 					UNROLL(i);
-					UNROLL(i+1);
-					UNROLL(i+2);
-					UNROLL(i+3);
-					UNROLL(i+4);
-					UNROLL(i+5);
-					UNROLL(i+6);
-					UNROLL(i+7);
-
-					UNROLL(i+8);
-					UNROLL(i+9);
-					UNROLL(i+10);
-					UNROLL(i+11);
-					UNROLL(i+12);
-					UNROLL(i+13);
-					UNROLL(i+14);
-					UNROLL(i+15);
 				}
-					UNROLL(i);
-					UNROLL(i+1);
-					UNROLL(i+2);
-					UNROLL(i+3);
-					UNROLL(i+4);
-					UNROLL(i+5);
-					UNROLL(i+6);
-
-					UNROLL(i+7);
-					UNROLL(i+8);
-					UNROLL(i+9);
-					UNROLL(i+10);
-					UNROLL(i+11);
-					UNROLL(i+12);
-					UNROLL(i+13);
-					UNROLL(i+14);
 			}
 			// do at the end of a generation
 		SWAP_BOARDS(outboard, inboard);
