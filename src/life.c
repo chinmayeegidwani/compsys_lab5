@@ -22,7 +22,7 @@
 
 // accesses the element at (i, j) at input board
 #define BOARD( __board, __i, __j)  (__board[(__i) + LDA*(__j)])
-#define NUM_THREADS 1
+#define NUM_THREADS 16
 void* process_thread(void* _args);
 
 typedef struct thread_info{
@@ -165,7 +165,7 @@ game_of_life (char* outboard,
 
 	populate_lookup();
 		//create_lookup_table();
-	return single(outboard, inboard, nrows, ncols, gens_max);
+	//return single(outboard, inboard, nrows, ncols, gens_max);
 
 	pthread_t* threads = malloc(sizeof(pthread_t) * NUM_THREADS);
 	thread_info* thread_args = malloc(sizeof(thread_info) * NUM_THREADS);
@@ -249,13 +249,11 @@ void* process_thread(void* arg){
 	const int LDA = nrows;
 	int jwest, jeast, hash;
 
-	for(curgen=0; curgen < gens_max; curgen++){
-		for (j = start; j < end; j++){
-				// LICM
-				 jwest = (j == 0)? (ncols-1):(j-1);
-				 jeast = (j == ncols-1) ? (0):(j+1);
 
-				// try to reuse previous cell's computed values
+	for(curgen=0; curgen < gens_max; curgen++){
+    	for (j = 0; j < nrows; j++) {
+				 int jwest = (j == 0)? (ncols-1):(j-1);
+				 int jeast = (j == ncols-1) ? (0):(j+1);
 
 				n = BOARD(inboard, nrows-2, j); // 128
 				ne = BOARD(inboard, nrows-2, jeast);// 64
@@ -272,12 +270,7 @@ void* process_thread(void* arg){
 
 				BOARD(outboard, nrows-1, j) = lookup[hash];
 
-
-
-				for (i = 1; i < nrows; i++)	{
-				//const int inorth = mod (i-1, nrows); // calculating neighbor positions
-				//const int isouth = mod (i+1, nrows);
-
+			for (i = 1; i < nrows; i++) {
 					nw = w; 
 					ne = e;  
 					n = curr; 
@@ -291,11 +284,12 @@ void* process_thread(void* arg){
 				hash = (nw ? 256 : 0) + (n ? 128 : 0) + (ne ? 64 : 0) + (w ? 32 : 0)
 						+ (curr ? 16 : 0) + (e ? 8 : 0) + (sw ? 4 : 0) + (s ? 2 : 0) +(se ? 1 : 0);
 
-				BOARD(outboard, nrows-1, j) = lookup[hash];
-				}
+				BOARD(outboard, i-1, j) = lookup[hash];
 			}
-			// do at the end of a generation
+    	}
+		// do at the end of a generation
 		SWAP_BOARDS(outboard, inboard);
 		pthread_barrier_wait(barrier);
 	}
+
 }
