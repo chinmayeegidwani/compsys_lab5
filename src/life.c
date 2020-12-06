@@ -22,7 +22,7 @@
 
 // accesses the element at (i, j) at input board
 #define BOARD( __board, __i, __j)  (__board[(__i) + LDA*(__j)])
-#define NUM_THREADS 8
+#define NUM_THREADS 1
 void* process_thread(void* _args);
 
 typedef struct thread_info{
@@ -60,37 +60,93 @@ void populate_lookup(){
 	 */
 	int curr, nw, n, ne, w, e, sw, s, se;
 	int alive_count, hash;
-	for(nw = 0; nw < 2; nw++){
-	for(n = 0; n < 2; n++){
-	for(ne = 0; ne < 2; ne++){
-	for(w = 0; w < 2; w++){
-	for(e = 0; e < 2; e++){
-	for(curr = 0; curr < 2; curr++){
-	for(sw = 0; sw < 2; sw++){
-	for(se = 0; se < 2; se++){
-	for(s = 0; s < 2; s++){
-		hash = nw*256 + n*128 + ne*64 + w*32 + curr*16 + e*8 + sw*4 + s*2 + se;
-		alive_count = nw + n + ne + w + e+ curr+ se + s+sw;
+  for (int nw = 0; nw < 2; nw++) {
+    for (int n = 0; n < 2; n++) {
+       for (int ne = 0; ne <2; ne++) {
+         for (int w = 0; w <2; w++) {
+            for (int curr = 0; curr <2; curr++) {
+              for (int e = 0; e <2; e++) {
+                 for (int sw = 0; sw <2; sw++) {
+                  for (int s = 0; s <2; s++) {
+                    for (int se = 0; se <2; se++) {
+                       hash = nw * 256 + n * 128 + ne * 64 + w * 32 + curr * 16
+                      + e * 8 + sw * 4 + s * 2 + se * 1;
+                       alive_count = nw + n + ne + w + e + sw + s + se;
 
-		/* Check the rules and determine the next state given current environment 
-			* 1. Any live cell with two or three live neighbours survives.
-			* 2. Any dead cell with three live neighbours becomes a live cell.
-			* 3. All other live cells die in the next generation. Similarly, all other dead cells stay dead.
-		*/
-		if((curr == 1 && alive_count == 2) || (curr == 1 && alive_count == 3)) lookup[hash] = 1;
-		else if(curr == 0 && alive_count == 3) lookup[hash] = 1;
-		else lookup[hash] = 0;
-		
+						/* Check the rules and determine the next state given current environment
+								* 1. Any live cell with two or three live neighbours survives.
+								* 2. Any dead cell with three live neighbours becomes a live cell.
+								* 3. All other live cells die in the next generation. Similarly, all other dead cells stay dead.
+						*/
+						if((curr == 1 && alive_count == 2) || (curr == 1 && alive_count == 3)) lookup[hash] = 1;
+						else if(curr == 0 && alive_count == 3) lookup[hash] = 1;
+						else lookup[hash] = 0;
+                  }   
+                }   
+              }   
+            }   
+          }
+        }
+      }
+    }
+  }
+}
 
-	}
-	}
-	}
-	}
-	}
-	}
-	}
-	}
-	}
+char* single(char* outboard, 
+	      char* inboard,
+	      const int nrows,
+	      const int ncols,
+	      const int gens_max){
+    int curgen, i, j;
+	const int rows_per_thread = nrows/NUM_THREADS;
+	char n, s, w, e, nw, ne, sw, se, curr, count;
+	const int LDA = nrows;
+	int jwest, jeast, hash;
+
+	for(curgen=0; curgen < gens_max; curgen++){
+    	for (j = 0; j < nrows; j++) {
+				 int jwest = (j == 0)? (ncols-1):(j-1);
+				 int jeast = (j == ncols-1) ? (0):(j+1);
+
+				n = BOARD(inboard, nrows-2, j); // 128
+				ne = BOARD(inboard, nrows-2, jeast);// 64
+				nw = BOARD(inboard, nrows-2, jwest); // 256
+				e = BOARD(inboard, nrows-1, jeast);// 8
+				w = BOARD(inboard, nrows-1, jwest);// 32
+				s = BOARD(inboard, 0, j); // 2
+				se = BOARD(inboard, 0, jeast);// 1
+				sw = BOARD(inboard, 0, jwest);// 4
+				curr = BOARD(inboard, nrows-1, j); /// 16
+				// nw*256 + n*128 + ne*64 + w*32 + curr*16 + e*8 + sw*4 + s*2 + se;
+				hash = (nw ? 256 : 0) + (n ? 128 : 0) + (ne ? 64 : 0) + (w ? 32 : 0)
+						+ (curr ? 16 : 0) + (e ? 8 : 0) + (sw ? 4 : 0) + (s ? 2 : 0) +(se ? 1 : 0);
+
+				BOARD(outboard, nrows-1, j) = lookup[hash];
+
+			for (i = 1; i < nrows; i++) {
+					nw = w; 
+					ne = e;  
+					n = curr; 
+					curr = s; 
+					e = se; 
+					w = sw; 
+					s = BOARD(inboard, i,   j); 
+					sw = BOARD(inboard, i, jwest); 
+					se = BOARD(inboard, i, jeast); 
+
+				hash = (nw ? 256 : 0) + (n ? 128 : 0) + (ne ? 64 : 0) + (w ? 32 : 0)
+						+ (curr ? 16 : 0) + (e ? 8 : 0) + (sw ? 4 : 0) + (s ? 2 : 0) +(se ? 1 : 0);
+
+				BOARD(outboard, i-1, j) = lookup[hash];
+			}
+    }
+
+    SWAP_BOARDS( outboard, inboard );
+
+  }
+
+  return inboard;
+
 }
 
 
@@ -108,7 +164,8 @@ game_of_life (char* outboard,
        nrows! */
 
 	populate_lookup();
-
+		//create_lookup_table();
+	return single(outboard, inboard, nrows, ncols, gens_max);
 
 	pthread_t* threads = malloc(sizeof(pthread_t) * NUM_THREADS);
 	thread_info* thread_args = malloc(sizeof(thread_info) * NUM_THREADS);
@@ -217,43 +274,25 @@ void* process_thread(void* arg){
 
 
 
-				for (i = 1; i < nrows-16; i+=16)	{
+				for (i = 1; i < nrows; i++)	{
 				//const int inorth = mod (i-1, nrows); // calculating neighbor positions
 				//const int isouth = mod (i+1, nrows);
-					UNROLL(i);
-					UNROLL(i+1);
-					UNROLL(i+2);
-					UNROLL(i+3);
-					UNROLL(i+4);
-					UNROLL(i+5);
-					UNROLL(i+6);
-					UNROLL(i+7);
 
-					UNROLL(i+8);
-					UNROLL(i+9);
-					UNROLL(i+10);
-					UNROLL(i+11);
-					UNROLL(i+12);
-					UNROLL(i+13);
-					UNROLL(i+14);
-					UNROLL(i+15);
+					nw = w; 
+					ne = e;  
+					n = curr; 
+					curr = s; 
+					e = se; 
+					w = sw; 
+					s = BOARD(inboard, i,   j); 
+					sw = BOARD(inboard, i, jwest); 
+					se = BOARD(inboard, i, jeast); 
+
+				hash = (nw ? 256 : 0) + (n ? 128 : 0) + (ne ? 64 : 0) + (w ? 32 : 0)
+						+ (curr ? 16 : 0) + (e ? 8 : 0) + (sw ? 4 : 0) + (s ? 2 : 0) +(se ? 1 : 0);
+
+				BOARD(outboard, nrows-1, j) = lookup[hash];
 				}
-					UNROLL(i);
-					UNROLL(i+1);
-					UNROLL(i+2);
-					UNROLL(i+3);
-					UNROLL(i+4);
-					UNROLL(i+5);
-					UNROLL(i+6);
-
-					UNROLL(i+7);
-					UNROLL(i+8);
-					UNROLL(i+9);
-					UNROLL(i+10);
-					UNROLL(i+11);
-					UNROLL(i+12);
-					UNROLL(i+13);
-					UNROLL(i+14);
 			}
 			// do at the end of a generation
 		SWAP_BOARDS(outboard, inboard);
