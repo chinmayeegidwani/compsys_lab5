@@ -5,6 +5,7 @@
 #include "life.h"
 #include "util.h"
 #include <pthread.h>
+#include <stdbool.h>
 
 /*****************************************************************************
  * Helper function definitions
@@ -45,13 +46,52 @@ typedef struct thread_info{
 	curr = s; \
 	e = se; \
 	w = sw; \
-	s = BOARD(inboard, i, j); \
+	s = BOARD(inboard, i,   j); \
 	sw = BOARD(inboard, i, jwest); \
 	se = BOARD(inboard, i, jeast); \
-	count = n+ne+nw+e+w+s+se+sw; \
-	BOARD(outboard, i-1, j) = (! curr && (count == (char) 3)) ||(curr && (count >= 2) && (count <= 3));
+	hash = (nw ? 256 : 0) + (n ? 128 : 0) + (ne ? 64 : 0) + (w ? 32 : 0)+ (curr ? 16 : 0) + (e ? 8 : 0) + (sw ? 4 : 0) + (s ? 2 : 0) +(se ? 1 : 0); \
+	BOARD(outboard, i-1, j) = lookup[hash]
 
+bool lookup[511]; //2^9 possibilities
 
+void populate_lookup(){
+	/* The idea here is to populate with every possibility of
+	 * surrounding cells being alive or dead.
+	 */
+	int curr, nw, n, ne, w, e, sw, s, se;
+	int alive_count, hash;
+	for(nw = 0; nw < 2; nw++){
+	for(n = 0; n < 2; n++){
+	for(ne = 0; ne < 2; ne++){
+	for(w = 0; w < 2; w++){
+	for(e = 0; e < 2; e++){
+	for(curr = 0; curr < 2; curr++){
+	for(sw = 0; sw < 2; sw++){
+	for(se = 0; se < 2; se++){
+	for(s = 0; s < 2; s++){
+		hash = nw*256 + n*128 + ne*64 + w*32 + curr*16 + e*8 + sw*4 + s*2 + se;
+		alive_count = nw + n + ne + w + e+ curr+ se + s+sw;
+
+		/* Check the rules and determine the next state given current environment 
+			* 1. Any live cell with two or three live neighbours survives.
+			* 2. Any dead cell with three live neighbours becomes a live cell.
+			* 3. All other live cells die in the next generation. Similarly, all other dead cells stay dead.
+		*/
+		if((curr == 1 && alive_count == 2) || (curr == 1 && alive_count == 3)) lookup[hash] = 1;
+		else if(curr == 0 && alive_count == 3) lookup[hash] = 1;
+		else lookup[hash] = 0;
+		
+
+	}
+	}
+	}
+	}
+	}
+	}
+	}
+	}
+	}
+}
 
 
 /*****************************************************************************
@@ -66,6 +106,8 @@ game_of_life (char* outboard,
 {
     /* HINT: in the parallel decomposition, LDA may not be equal to
        nrows! */
+
+	populate_lookup();
 
 
 	pthread_t* threads = malloc(sizeof(pthread_t) * NUM_THREADS);
@@ -148,7 +190,7 @@ void* process_thread(void* arg){
 	const int rows_per_thread = nrows/NUM_THREADS;
 	char n, s, w, e, nw, ne, sw, se, curr, count;
 	const int LDA = nrows;
-	int jwest, jeast;
+	int jwest, jeast, hash;
 
 	for(curgen=0; curgen < gens_max; curgen++){
 		for (j = start; j < end; j++){
@@ -158,20 +200,20 @@ void* process_thread(void* arg){
 
 				// try to reuse previous cell's computed values
 
-				n = BOARD(inboard, nrows-2, j); //
-				ne = BOARD(inboard, nrows-2, jeast);//
-				nw = BOARD(inboard, nrows-2, jwest); //
-				e = BOARD(inboard, nrows-1, jeast);//
-				w = BOARD(inboard, nrows-1, jwest);//
-				s = BOARD(inboard, 0, j); //
-				se = BOARD(inboard, 0, jeast);//
-				sw = BOARD(inboard, 0, jwest);//
-				curr = BOARD(inboard, nrows-1, j); //
+				n = BOARD(inboard, nrows-2, j); // 128
+				ne = BOARD(inboard, nrows-2, jeast);// 64
+				nw = BOARD(inboard, nrows-2, jwest); // 256
+				e = BOARD(inboard, nrows-1, jeast);// 8
+				w = BOARD(inboard, nrows-1, jwest);// 32
+				s = BOARD(inboard, 0, j); // 2
+				se = BOARD(inboard, 0, jeast);// 1
+				sw = BOARD(inboard, 0, jwest);// 4
+				curr = BOARD(inboard, nrows-1, j); /// 16
+				// nw*256 + n*128 + ne*64 + w*32 + curr*16 + e*8 + sw*4 + s*2 + se;
+				hash = (nw ? 256 : 0) + (n ? 128 : 0) + (ne ? 64 : 0) + (w ? 32 : 0)
+						+ (curr ? 16 : 0) + (e ? 8 : 0) + (sw ? 4 : 0) + (s ? 2 : 0) +(se ? 1 : 0);
 
-				count = n+ne+nw+e+w+s+se+sw;
-
-				BOARD(outboard, nrows-1, j) = (! curr && (count == (char) 3)) || // rule 2
-    									(curr && (count >= 2) && (count <= 3));
+				BOARD(outboard, nrows-1, j) = lookup[hash];
 
 
 
